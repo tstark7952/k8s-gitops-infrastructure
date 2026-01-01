@@ -1,0 +1,105 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pod-security-baseline
+  annotations:
+    policies.kyverno.io/title: Pod Security Standards (Baseline)
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Enforce Pod Security Standards Baseline profile. This policy enforces
+      the Baseline Pod Security Standard which is a minimally restrictive
+      policy that prevents known privilege escalations.
+spec:
+  validationFailureAction: Audit  # Start with Audit, move to Enforce after testing
+  background: true
+  rules:
+    - name: restricted-seccomp-profile
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      validate:
+        message: "Pods must use RuntimeDefault or Localhost seccomp profile"
+        pattern:
+          spec:
+            =(ephemeralContainers):
+            - =(securityContext):
+                =(seccompProfile):
+                  =(type): "RuntimeDefault | Localhost"
+            =(initContainers):
+            - =(securityContext):
+                =(seccompProfile):
+                  =(type): "RuntimeDefault | Localhost"
+            containers:
+            - =(securityContext):
+                =(seccompProfile):
+                  =(type): "RuntimeDefault | Localhost"
+
+    - name: disallow-privilege-escalation
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      validate:
+        message: "Privilege escalation must be disabled"
+        pattern:
+          spec:
+            =(ephemeralContainers):
+            - securityContext:
+                allowPrivilegeEscalation: false
+            =(initContainers):
+            - securityContext:
+                allowPrivilegeEscalation: false
+            containers:
+            - securityContext:
+                allowPrivilegeEscalation: false
+
+    - name: disallow-privileged-containers
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      validate:
+        message: "Privileged containers are not allowed"
+        pattern:
+          spec:
+            =(ephemeralContainers):
+            - =(securityContext):
+                =(privileged): false
+            =(initContainers):
+            - =(securityContext):
+                =(privileged): false
+            containers:
+            - =(securityContext):
+                =(privileged): false
+
+    - name: drop-all-capabilities
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      validate:
+        message: "All capabilities must be dropped"
+        pattern:
+          spec:
+            =(ephemeralContainers):
+            - securityContext:
+                capabilities:
+                  drop:
+                    - ALL
+            =(initContainers):
+            - securityContext:
+                capabilities:
+                  drop:
+                    - ALL
+            containers:
+            - securityContext:
+                capabilities:
+                  drop:
+                    - ALL

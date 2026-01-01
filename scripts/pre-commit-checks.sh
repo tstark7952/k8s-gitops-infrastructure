@@ -73,8 +73,8 @@ check_image_tags() {
             continue
         fi
 
-        # Check for 'latest' tag
-        if grep -q "image:.*:latest" "$file"; then
+        # Check for 'latest' tag (skip policy files that document blocking :latest)
+        if [[ ! "$file" =~ "disallow-latest-tag.yaml" ]] && grep -q "image:.*:latest" "$file"; then
             error "Found 'latest' tag in $file - use specific version tags"
             errors=$((errors + 1))
         fi

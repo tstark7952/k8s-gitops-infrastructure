@@ -1,0 +1,65 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Image Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      The ':latest' tag is mutable and should not be used in production.
+      This policy validates that container images specify an explicit tag
+      or use a digest reference.
+spec:
+  validationFailureAction: Audit  # Start with Audit
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      validate:
+        message: "Image tag ':latest' is not allowed. Use explicit version tags or digest references."
+        pattern:
+          spec:
+            containers:
+            - image: "!*:latest"
+
+    - name: require-image-tag-init
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      preconditions:
+        all:
+        - key: "{{ request.object.spec.initContainers[] || `[]` | length(@) }}"
+          operator: GreaterThanOrEquals
+          value: 1
+      validate:
+        message: "Init container image tag ':latest' is not allowed"
+        pattern:
+          spec:
+            initContainers:
+            - image: "!*:latest"
+
+    - name: require-image-tag-ephemeral
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      preconditions:
+        all:
+        - key: "{{ request.object.spec.ephemeralContainers[] || `[]` | length(@) }}"
+          operator: GreaterThanOrEquals
+          value: 1
+      validate:
+        message: "Ephemeral container image tag ':latest' is not allowed"
+        pattern:
+          spec:
+            ephemeralContainers:
+            - image: "!*:latest"
