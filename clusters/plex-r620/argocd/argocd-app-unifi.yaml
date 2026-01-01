@@ -1,0 +1,154 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: unifi
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: "gitops-notifications"
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/your-org/k8s-gitops-infrastructure.git
+    targetRevision: HEAD
+    path: clusters/plex-r620/applications/unifi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: unifi
+
+  syncPolicy:
+    automated:
+      prune: true    # Remove resources that are no longer in Git
+      selfHeal: true # Auto-sync when drift detected
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore replica count changes from HPA
+
+  info:
+    - name: 'Component'
+      value: 'Network Management'
+    - name: 'Security Contact'
+      value: 'security@yourdomain.com'
+
+  # Health assessment
+  health:
+    - kind: Deployment
+      check: |
+        hs = {}
+        if obj.status ~= nil then
+          if obj.status.conditions ~= nil then
+            for i, condition in ipairs(obj.status.conditions) do
+              if condition.type == "Progressing" and condition.reason == "ProgressDeadlineExceeded" then
+                hs.status = "Degraded"
+                hs.message = condition.message
+                return hs
+              end
+              if condition.type == "Available" and condition.status == "False" then
+                hs.status = "Degraded"
+                hs.message = condition.message
+                return hs
+              end
+            end
+          end
+          if obj.status.availableReplicas ~= nil and obj.status.availableReplicas > 0 then
+            hs.status = "Healthy"
+            hs.message = "Deployment is healthy"
+            return hs
+          end
+        end
+        hs.status = "Progressing"
+        hs.message = "Waiting for deployment"
+        return hs
+---
+# ArgoCD AppProject for production workloads
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production
+  namespace: argocd
+spec:
+  description: Production applications with strict security controls
+
+  # Source repositories
+  sourceRepos:
+    - 'https://github.com/your-org/k8s-gitops-infrastructure.git'
+
+  # Destination clusters and namespaces
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+      name: in-cluster
+
+  # Cluster resource allow list
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: 'networking.k8s.io'
+      kind: NetworkPolicy
+    - group: 'kyverno.io'
+      kind: ClusterPolicy
+
+  # Namespace resource deny list
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: ResourceQuota
+    - group: ''
+      kind: LimitRange
+
+  # Security policies
+  roles:
+    - name: read-only
+      description: Read-only access to production apps
+      policies:
+        - p, proj:production:read-only, applications, get, production/*, allow
+      groups:
+        - developers
+
+    - name: deployer
+      description: Deploy access with approval
+      policies:
+        - p, proj:production:deployer, applications, sync, production/*, allow
+        - p, proj:production:deployer, applications, update, production/*, allow
+      groups:
+        - platform-team
+
+  # Sync windows (maintenance windows)
+  syncWindows:
+    - kind: allow
+      schedule: '0 2 * * 1-5'  # Monday-Friday 2am
+      duration: 2h
+      applications:
+        - '*'
+      manualSync: true
+      namespaces:
+        - '*'
+
+    - kind: deny
+      schedule: '0 0 * * 6,0'  # Weekends
+      duration: 48h
+      applications:
+        - '*'
+      manualSync: false
+
+  # Signature verification
+  signatureKeys:
+    - keyID: YOUR_GPG_KEY_ID  # Replace with actual GPG key ID

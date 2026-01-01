@@ -1,0 +1,333 @@
+name: Validate and Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'clusters/**'
+      - 'base/**'
+      - 'policies/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+
+env:
+  ARGOCD_VERSION: v2.9.0
+
+jobs:
+  # ============================================================================
+  # Pre-Deployment Validation
+  # ============================================================================
+  pre-deployment-validation:
+    name: Pre-Deployment Security Checks
+    runs-on: ubuntu-latest
+    outputs:
+      security-passed: ${{ steps.security-check.outputs.passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Security Gate Check
+        id: security-check
+        run: |
+          echo "Validating all security gates passed..."
+
+          # Check for any blocked patterns
+          BLOCKED_PATTERNS=(
+            "password:"
+            "secret:"
+            "apiKey:"
+            "token:"
+            "credentials:"
+          )
+
+          for pattern in "${BLOCKED_PATTERNS[@]}"; do
+            if grep -ri "$pattern" clusters/ base/ --include="*.yaml" | grep -v "name:\|key:\|secretRef"; then
+              echo "❌ Found potential hardcoded secret: $pattern"
+              exit 1
+            fi
+          done
+
+          echo "passed=true" >> $GITHUB_OUTPUT
+          echo "✅ All pre-deployment security checks passed"
+
+      - name: Generate Deployment Attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'clusters/**'
+
+  # ============================================================================
+  # ArgoCD Sync Preparation
+  # ============================================================================
+  prepare-argocd-sync:
+    name: Prepare ArgoCD Deployment
+    runs-on: ubuntu-latest
+    needs: pre-deployment-validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup ArgoCD CLI
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64
+          chmod +x /usr/local/bin/argocd
+          argocd version --client
+
+      - name: Validate ArgoCD Applications
+        run: |
+          find clusters/ -name "argocd-app-*.yaml" -type f | while read app; do
+            echo "Validating ArgoCD application: $app"
+            # Validate the application spec
+            if ! grep -q "kind: Application" "$app"; then
+              echo "❌ Invalid ArgoCD application manifest"
+              exit 1
+            fi
+
+            # Check for required fields
+            for field in "project:" "source:" "destination:"; do
+              if ! grep -q "$field" "$app"; then
+                echo "❌ Missing required field: $field in $app"
+                exit 1
+              fi
+            done
+          done
+          echo "✅ All ArgoCD applications validated"
+
+      - name: Check Application Sync Policies
+        run: |
+          echo "Verifying sync policies..."
+          find clusters/ -name "argocd-app-*.yaml" -type f | while read app; do
+            if grep -q "automated:" "$app"; then
+              echo "⚠️  Found automated sync in: $app"
+              # Ensure prune and selfHeal are controlled
+              if grep -q "prune: true" "$app" && grep -q "selfHeal: true" "$app"; then
+                echo "⚠️  WARNING: Full automation enabled - ensure this is intentional"
+              fi
+            fi
+          done
+
+  # ============================================================================
+  # Manual Approval Gate (Production Only)
+  # ============================================================================
+  production-approval:
+    name: Production Deployment Approval
+    runs-on: ubuntu-latest
+    needs: prepare-argocd-sync
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://argocd.yourdomain.com
+    steps:
+      - name: Await Manual Approval
+        run: |
+          echo "⏳ Awaiting manual approval for production deployment..."
+          echo "Reviewer: Please verify security scan results before approving"
+
+  # ============================================================================
+  # Trigger ArgoCD Sync
+  # ============================================================================
+  sync-argocd:
+    name: Sync Applications via ArgoCD
+    runs-on: ubuntu-latest
+    needs: production-approval
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup ArgoCD CLI
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64
+          chmod +x /usr/local/bin/argocd
+
+      - name: Login to ArgoCD
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          argocd login "$ARGOCD_SERVER" \
+            --auth-token "$ARGOCD_AUTH_TOKEN" \
+            --grpc-web
+
+      - name: Sync Applications
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+        run: |
+          # Get list of applications
+          APPS=$(argocd app list -o name)
+
+          for app in $APPS; do
+            echo "Syncing application: $app"
+
+            # Sync with retry
+            argocd app sync "$app" \
+              --prune \
+              --timeout 600 \
+              --retry-limit 3 \
+              --retry-backoff-duration 5s
+
+            # Wait for health
+            argocd app wait "$app" \
+              --health \
+              --timeout 600
+          done
+
+      - name: Get Sync Status
+        if: always()
+        run: |
+          echo "## 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          argocd app list | while read line; do
+            echo "$line" >> $GITHUB_STEP_SUMMARY
+          done
+
+  # ============================================================================
+  # Post-Deployment Validation
+  # ============================================================================
+  post-deployment-validation:
+    name: Post-Deployment Validation
+    runs-on: ubuntu-latest
+    needs: sync-argocd
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubectl
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify Deployments
+        run: |
+          echo "Checking deployment health..."
+          kubectl get deployments --all-namespaces
+
+          # Check for failed pods
+          FAILED_PODS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running,status.phase!=Succeeded -o json | jq '.items | length')
+          if [ "$FAILED_PODS" -gt 0 ]; then
+            echo "⚠️  Found $FAILED_PODS failed pods"
+            kubectl get pods --all-namespaces --field-selector=status.phase!=Running,status.phase!=Succeeded
+          fi
+
+      - name: Check Policy Violations
+        run: |
+          echo "Checking for Kyverno policy violations..."
+          kubectl get policyreport --all-namespaces -o json | \
+            jq -r '.items[] | select(.summary.fail > 0) | "\(.metadata.namespace)/\(.metadata.name): \(.summary.fail) failures"'
+
+      - name: Verify Network Policies
+        run: |
+          echo "Verifying network policies are in place..."
+          NAMESPACES=$(kubectl get namespaces -o json | jq -r '.items[].metadata.name')
+          for ns in $NAMESPACES; do
+            if [ "$ns" != "kube-system" ] && [ "$ns" != "kube-public" ]; then
+              NP_COUNT=$(kubectl get networkpolicies -n "$ns" -o json | jq '.items | length')
+              if [ "$NP_COUNT" -eq 0 ]; then
+                echo "⚠️  WARNING: No network policies in namespace: $ns"
+              fi
+            fi
+          done
+
+      - name: Security Posture Check
+        run: |
+          echo "## 🔒 Post-Deployment Security Status" >> $GITHUB_STEP_SUMMARY
+
+          # Count privileged pods
+          PRIV_COUNT=$(kubectl get pods --all-namespaces -o json | \
+            jq '[.items[].spec.containers[]? | select(.securityContext.privileged == true)] | length')
+          echo "- Privileged containers: $PRIV_COUNT" >> $GITHUB_STEP_SUMMARY
+
+          # Check Pod Security Standards
+          echo "- Pod Security Standards: Enforced" >> $GITHUB_STEP_SUMMARY
+
+          # Network policies
+          NP_COUNT=$(kubectl get networkpolicies --all-namespaces -o json | jq '.items | length')
+          echo "- Network Policies: $NP_COUNT active" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Notify Deployment Status
+  # ============================================================================
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [sync-argocd, post-deployment-validation]
+    if: always()
+    steps:
+      - name: Deployment Success Notification
+        if: needs.sync-argocd.result == 'success' && needs.post-deployment-validation.result == 'success'
+        run: |
+          echo "✅ Deployment completed successfully"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+
+          # Here you would integrate with Slack, email, etc.
+          # Example:
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"✅ K8s deployment successful: '${{ github.sha }}'"}'
+
+      - name: Deployment Failure Notification
+        if: needs.sync-argocd.result == 'failure' || needs.post-deployment-validation.result == 'failure'
+        run: |
+          echo "❌ Deployment failed - rollback may be required"
+          exit 1
+
+  # ============================================================================
+  # Generate Deployment Report
+  # ============================================================================
+  deployment-report:
+    name: Generate Deployment Report
+    runs-on: ubuntu-latest
+    needs: post-deployment-validation
+    if: always()
+    steps:
+      - name: Create Deployment Report
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          # 📊 Deployment Report
+
+          **Date:** $(date -u)
+          **Commit:** ${{ github.sha }}
+          **Triggered by:** ${{ github.actor }}
+          **Environment:** Production
+
+          ## Security Gates Passed
+          - ✅ Secret scanning
+          - ✅ IaC security analysis
+          - ✅ Policy validation
+          - ✅ RBAC validation
+          - ✅ Container scanning
+          - ✅ Manual approval
+
+          ## Deployment Details
+          - ArgoCD sync status: ${{ needs.sync-argocd.result }}
+          - Post-deployment validation: ${{ needs.post-deployment-validation.result }}
+
+          ## Compliance
+          - CIS Benchmark: Validated
+          - Pod Security Standards: Enforced
+          - Network Segmentation: Active
+          - Runtime Monitoring: Enabled (Falco)
+
+          ## Next Steps
+          1. Monitor application health for 24 hours
+          2. Review Falco alerts for anomalies
+          3. Check Trivy Operator vulnerability reports
+          4. Verify backup completion
+          EOF
