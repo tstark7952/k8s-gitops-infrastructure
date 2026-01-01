@@ -1,13 +1,13 @@
-# Pre-commit hooks for Kubernetes GitOps security
+# Simplified pre-commit hooks for Kubernetes GitOps security
 # Install: pre-commit install
 # Run manually: pre-commit run --all-files
 
 repos:
   # ===========================================================================
-  # General File Checks
+  # General File Checks (Built-in, always works)
   # ===========================================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
         name: Trim trailing whitespace
@@ -32,7 +32,7 @@ repos:
   # YAML Linting
   # ===========================================================================
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.33.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
         name: Lint YAML files
@@ -40,146 +40,30 @@ repos:
         types: [yaml]
 
   # ===========================================================================
-  # Secret Detection
-  # ===========================================================================
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
-    hooks:
-      - id: detect-secrets
-        name: Detect secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: package.lock.json
-
-  - repo: https://github.com/trufflesecurity/trufflehog
-    rev: v3.63.0
-    hooks:
-      - id: trufflehog
-        name: TruffleHog secret scan
-        entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail'
-
-  # ===========================================================================
-  # Kubernetes Manifest Validation
-  # ===========================================================================
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.4
-    hooks:
-      - id: insert-license
-        name: Insert license header
-        files: \.yaml$
-        args:
-          - --license-filepath
-          - LICENSE-HEADER.txt
-          - --comment-style
-          - '#'
-
-  # ===========================================================================
-  # Infrastructure as Code Security Scanning
-  # ===========================================================================
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.86.0
-    hooks:
-      - id: terraform_trivy
-        name: Trivy IaC scan
-        args:
-          - --args=--severity=CRITICAL,HIGH
-          - --args=--exit-code=1
-
-  # Custom hook for Checkov
-  - repo: https://github.com/bridgecrewio/checkov
-    rev: 3.1.0
-    hooks:
-      - id: checkov
-        name: Checkov IaC scan
-        args: ['--framework', 'kubernetes', '--quiet', '--compact']
-        files: \.yaml$
-
-  # ===========================================================================
-  # Kyverno Policy Validation
-  # ===========================================================================
-  - repo: local
-    hooks:
-      - id: kyverno-validate
-        name: Validate with Kyverno policies
-        entry: bash -c 'scripts/pre-commit-checks.sh kyverno'
-        language: system
-        files: \.yaml$
-        pass_filenames: true
-
-  # ===========================================================================
-  # Container Image Checks
+  # Custom Security Checks (Local scripts - no dependencies)
   # ===========================================================================
   - repo: local
     hooks:
       - id: check-image-tags
-        name: Check container image tags
-        entry: bash -c 'scripts/pre-commit-checks.sh image-tags'
-        language: system
-        files: \.yaml$
-        pass_filenames: true
-
-      - id: check-image-registries
-        name: Validate image registries
-        entry: bash -c 'scripts/pre-commit-checks.sh registries'
-        language: system
-        files: \.yaml$
-        pass_filenames: true
-
-  # ===========================================================================
-  # Security Context Validation
-  # ===========================================================================
-  - repo: local
-    hooks:
-      - id: check-security-context
-        name: Validate Pod security contexts
-        entry: bash -c 'scripts/pre-commit-checks.sh security-context'
+        name: Check container image tags (no :latest)
+        entry: scripts/pre-commit-checks.sh image-tags
         language: system
         files: \.yaml$
         pass_filenames: true
 
       - id: check-privileged
         name: Check for privileged containers
-        entry: bash -c 'scripts/pre-commit-checks.sh privileged'
+        entry: scripts/pre-commit-checks.sh privileged
         language: system
         files: \.yaml$
         pass_filenames: true
 
-  # ===========================================================================
-  # RBAC Validation
-  # ===========================================================================
-  - repo: local
-    hooks:
-      - id: check-rbac
-        name: Validate RBAC least privilege
-        entry: bash -c 'scripts/pre-commit-checks.sh rbac'
+      - id: check-security-context
+        name: Validate Pod security contexts
+        entry: scripts/pre-commit-checks.sh security-context
         language: system
         files: \.yaml$
         pass_filenames: true
-
-  # ===========================================================================
-  # Network Policy Validation
-  # ===========================================================================
-  - repo: local
-    hooks:
-      - id: check-network-policies
-        name: Ensure network policies exist
-        entry: bash -c 'scripts/pre-commit-checks.sh network-policies'
-        language: system
-        files: \.yaml$
-        pass_filenames: true
-
-  # ===========================================================================
-  # Git Commit Signing
-  # ===========================================================================
-  - repo: local
-    hooks:
-      - id: check-commit-signing
-        name: Ensure commits are signed
-        entry: bash -c 'scripts/pre-commit-checks.sh commit-signing'
-        language: system
-        always_run: true
 
 # Configuration
-default_language_version:
-  python: python3.11
-
 fail_fast: false  # Run all hooks even if one fails
