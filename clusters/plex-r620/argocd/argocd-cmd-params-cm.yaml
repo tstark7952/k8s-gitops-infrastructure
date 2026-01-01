@@ -8,7 +8,5 @@ metadata:
     app.kubernetes.io/name: argocd-cmd-params-cm
     app.kubernetes.io/part-of: argocd
 data:
-  # Run server without TLS (certificate is terminated by ingress/external LB)
-  server.insecure: "false"
-  # Disable internal TLS for gRPC
-  server.disable.auth: "false"
+  # Run server without TLS on HTTP port (allows HTTP-01 ACME validation)
+  server.insecure: "true"
