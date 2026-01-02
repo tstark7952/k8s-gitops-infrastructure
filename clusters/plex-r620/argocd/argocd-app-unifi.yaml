@@ -13,7 +13,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/your-org/k8s-gitops-infrastructure.git
+    repoURL: https://github.com/tstark7952/k8s-gitops-infrastructure.git
     targetRevision: HEAD
     path: clusters/plex-r620/applications/unifi
 
@@ -90,7 +90,7 @@ spec:
 
   # Source repositories
   sourceRepos:
-    - 'https://github.com/your-org/k8s-gitops-infrastructure.git'
+    - 'https://github.com/tstark7952/k8s-gitops-infrastructure.git'
 
   # Destination clusters and namespaces
   destinations:
