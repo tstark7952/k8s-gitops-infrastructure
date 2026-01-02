@@ -5,7 +5,6 @@ metadata:
   name: grafana
   namespace: monitoring
   annotations:
-    traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: step-ca-acme-external
 spec:
   ingressClassName: traefik

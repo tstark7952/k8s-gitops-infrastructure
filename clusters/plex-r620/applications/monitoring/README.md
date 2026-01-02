@@ -21,7 +21,7 @@ TLS certificates are automatically managed by **cert-manager** using the ACME pr
 ### Configuration
 
 - **ClusterIssuer**: `step-ca-acme-external` (configured to use HTTP-01 solver with Traefik)
-- **Certificate**: Defined in `grafana-certificate.yaml`
+- **Certificate**: Automatically created via `cert-manager.io/cluster-issuer` annotation on Ingress.
 - **Renewal**: Automatic (30 days before expiry)
 
 ### Troubleshooting
