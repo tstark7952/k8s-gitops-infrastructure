@@ -20,7 +20,7 @@ spec:
     spec:
       initContainers:
       - name: import-cert
-        image: lscr.io/linuxserver/unifi-network-application:8.6.9
+        image: lscr.io/linuxserver/unifi-network-application:10.0.162
         command:
         - /bin/bash
         - -c
@@ -65,7 +65,7 @@ spec:
           readOnly: true
       containers:
       - name: unifi
-        image: lscr.io/linuxserver/unifi-network-application:8.6.9
+        image: lscr.io/linuxserver/unifi-network-application:10.0.162
         ports:
         - name: web-ui
           containerPort: 8443
