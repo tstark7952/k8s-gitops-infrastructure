@@ -6,10 +6,10 @@ metadata:
   namespace: unifi
   labels:
     app: unifi-controller
-spec:
-  type: LoadBalancer
   annotations:
     metallb.universe.tf/loadBalancerIPs: 192.168.100.100
+spec:
+  type: LoadBalancer
   ports:
   - name: device-comm
     port: 8080
