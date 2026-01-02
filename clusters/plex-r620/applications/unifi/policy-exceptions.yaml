@@ -1,0 +1,38 @@
+---
+apiVersion: kyverno.io/v2beta1
+kind: PolicyException
+metadata:
+  name: unifi-controller-exceptions
+  namespace: unifi
+spec:
+  exceptions:
+  - policyName: require-non-root-user
+    ruleNames:
+    - check-runAsNonRoot
+    - autogen-check-runAsNonRoot
+  - policyName: require-readonly-rootfs
+    ruleNames:
+    - check-readonlyRootFilesystem
+    - autogen-check-readonlyRootFilesystem
+  - policyName: pod-security-baseline
+    ruleNames:
+    - disallow-privilege-escalation
+    - drop-all-capabilities
+    - autogen-disallow-privilege-escalation
+    - autogen-drop-all-capabilities
+  - policyName: disallow-latest-tag
+    ruleNames:
+    - require-image-tag
+    - require-image-tag-init
+    - autogen-require-image-tag
+    - autogen-require-image-tag-init
+  match:
+    any:
+    - resources:
+        kinds:
+        - Deployment
+        - Pod
+        namespaces:
+        - unifi
+        names:
+        - unifi-controller*

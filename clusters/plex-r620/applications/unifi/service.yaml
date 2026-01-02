@@ -2,45 +2,22 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: unifi-controller-web
+  name: unifi-controller
   namespace: unifi
   labels:
     app: unifi-controller
 spec:
   type: LoadBalancer
   annotations:
-    metallb.universe.tf/loadBalancerIPs: 192.168.100.104
-  ports:
-  - name: web-ui
-    port: 8443
-    targetPort: 8443
-    protocol: TCP
-  - name: guest-https
-    port: 8843
-    targetPort: 8843
-    protocol: TCP
-  - name: guest-http
-    port: 8880
-    targetPort: 8880
-    protocol: TCP
-  selector:
-    app: unifi-controller
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: unifi-controller-comm
-  namespace: unifi
-  labels:
-    app: unifi-controller
-spec:
-  type: LoadBalancer
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: 192.168.100.104
+    metallb.universe.tf/loadBalancerIPs: 192.168.100.100
   ports:
   - name: device-comm
     port: 8080
     targetPort: 8080
+    protocol: TCP
+  - name: web-ui
+    port: 8443
+    targetPort: 8443
     protocol: TCP
   - name: stun
     port: 3478
@@ -54,16 +31,24 @@ spec:
     port: 6789
     targetPort: 6789
     protocol: TCP
+  - name: syslog
+    port: 5514
+    targetPort: 5514
+    protocol: UDP
+  - name: https-redirect
+    port: 443
+    targetPort: 8443
+    protocol: TCP
   selector:
     app: unifi-controller
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: unifi-mongodb
+  name: unifi-db
   namespace: unifi
   labels:
-    app: unifi-mongodb
+    app: unifi-db
 spec:
   type: ClusterIP
   ports:
@@ -72,4 +57,4 @@ spec:
     targetPort: 27017
     protocol: TCP
   selector:
-    app: unifi-mongodb
+    app: unifi-db
