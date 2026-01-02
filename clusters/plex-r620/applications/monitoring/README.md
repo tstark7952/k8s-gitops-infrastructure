@@ -16,64 +16,22 @@ Prometheus + Grafana monitoring stack for cluster observability.
 
 ## TLS Certificate Management
 
-Grafana uses a manually generated certificate from Step-CA due to ACME HTTP-01 challenges not working with in-cluster Step-CA (hairpin NAT issue - Step-CA cannot reach MetalLB external IPs from inside the cluster).
+TLS certificates are automatically managed by **cert-manager** using the ACME protocol with **Step-CA**.
 
-### Certificate Details
+### Configuration
 
-- **Issuer**: R620 Homelab Intermediate CA
-- **Validity**: 90 days
-- **Current expiry**: Check with `kubectl get secret grafana-tls -n monitoring -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -noout -enddate`
+- **ClusterIssuer**: `step-ca-acme-external` (configured to use HTTP-01 solver with Traefik)
+- **Certificate**: Defined in `grafana-certificate.yaml`
+- **Renewal**: Automatic (30 days before expiry)
 
-### Certificate Renewal Process
+### Troubleshooting
 
-When the certificate needs renewal (30 days before expiry):
+If certificate renewal fails:
+1. Check cert-manager logs: `kubectl logs -n cert-manager -l app=cert-manager`
+2. Check Certificate resource status: `kubectl get certificate grafana-tls -n monitoring -o wide`
+3. Check CertificateRequest and Order resources.
 
-```bash
-# 1. Generate new certificate from Step-CA
-kubectl exec step-ca-0 -n step-ca -- step certificate create \
-  grafana.homelab.local /tmp/grafana-new.crt /tmp/grafana-new.key \
-  --profile leaf --not-after 2160h --kty RSA --size 2048 \
-  --ca /home/step/certs/intermediate-ca.crt \
-  --ca-key /home/step/secrets/intermediate-ca.key \
-  --no-password --insecure
 
-# 2. Copy certificates from pod
-kubectl cp step-ca/step-ca-0:/tmp/grafana-new.crt /tmp/grafana.crt
-kubectl cp step-ca/step-ca-0:/tmp/grafana-new.key /tmp/grafana.key
-kubectl cp step-ca/step-ca-0:/home/step/certs/intermediate-ca.crt /tmp/intermediate-ca.crt
-
-# 3. Create full chain
-cat /tmp/grafana.crt /tmp/intermediate-ca.crt > /tmp/grafana-fullchain.crt
-
-# 4. Delete old secret
-kubectl delete secret grafana-tls -n monitoring
-
-# 5. Create new secret
-kubectl create secret tls grafana-tls -n monitoring \
-  --cert=/tmp/grafana-fullchain.crt --key=/tmp/grafana.key
-
-# 6. Restart Grafana to pick up new certificate
-kubectl rollout restart deployment grafana -n monitoring
-
-# 7. Cleanup
-rm /tmp/grafana.crt /tmp/grafana.key /tmp/intermediate-ca.crt /tmp/grafana-fullchain.crt
-kubectl exec step-ca-0 -n step-ca -- rm /tmp/grafana-new.crt /tmp/grafana-new.key
-```
-
-### Why Not Automated?
-
-We attempted automated certificate management with cert-manager and the step-ca-acme ClusterIssuer, but encountered the following issue:
-
-**Problem**: Step-CA runs inside the cluster and validates ACME HTTP-01 challenges by connecting to `grafana.homelab.local`. This hostname resolves to the MetalLB external IP (192.168.100.102), but pods inside the cluster cannot connect to MetalLB external IPs due to the "hairpin NAT" limitation.
-
-**Error**: `Connection refused` when Step-CA tries to reach `http://grafana.homelab.local/.well-known/acme-challenge/<token>`
-
-**Alternatives considered**:
-- DNS-01 challenge: Requires DNS provider API integration (not configured)
-- Hairpin mode: Requires complex network reconfiguration
-- step-issuer: Previously attempted, had connectivity issues
-
-**Decision**: Manual certificate management with documented renewal process provides reliable operation with minimal operational overhead (quarterly renewal).
 
 ## Dashboards
 
