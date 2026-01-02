@@ -1,0 +1,31 @@
+---
+apiVersion: kyverno.io/v2beta1
+kind: PolicyException
+metadata:
+  name: cert-manager-exception
+  namespace: kyverno
+spec:
+  exceptions:
+  - policyName: require-resource-limits
+    ruleNames:
+    - check-container-resources
+    - autogen-check-container-resources
+  - policyName: require-non-root-user
+    ruleNames:
+    - check-runAsNonRoot
+    - autogen-check-runAsNonRoot
+  - policyName: require-readonly-rootfs
+    ruleNames:
+    - check-readonlyRootFilesystem
+    - autogen-check-readonlyRootFilesystem
+  match:
+    any:
+    - resources:
+        kinds:
+        - Pod
+        - Deployment
+        - ReplicaSet
+        namespaces:
+        - cert-manager
+        names:
+        - "cert-manager*"
