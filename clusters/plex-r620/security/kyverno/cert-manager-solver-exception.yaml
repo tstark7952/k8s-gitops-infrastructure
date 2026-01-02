@@ -1,0 +1,45 @@
+---
+apiVersion: kyverno.io/v2beta1
+kind: PolicyException
+metadata:
+  name: cert-manager-solver-exception
+  namespace: kyverno
+spec:
+  exceptions:
+  - policyName: require-non-root-user
+    ruleNames:
+    - check-runAsNonRoot
+    - autogen-check-runAsNonRoot
+  - policyName: require-readonly-rootfs
+    ruleNames:
+    - check-readonlyRootFilesystem
+    - autogen-check-readonlyRootFilesystem
+  - policyName: require-resource-limits
+    ruleNames:
+    - check-resource-limits
+    - autogen-check-resource-limits
+  - policyName: pod-security-baseline
+    ruleNames:
+    - drop-all-capabilities
+    - autogen-drop-all-capabilities
+  match:
+    any:
+    - resources:
+        kinds:
+        - Pod
+        - Deployment
+        - ReplicaSet
+        namespaces:
+        - "*"
+        names:
+        - "cm-acme-http-solver-*"
+    - resources:
+        kinds:
+        - Pod
+        - Deployment
+        - ReplicaSet
+        namespaces:
+        - "*"
+        selector:
+          matchLabels:
+            acme.cert-manager.io/http01-solver: "true"

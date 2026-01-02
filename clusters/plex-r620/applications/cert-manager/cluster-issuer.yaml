@@ -1,0 +1,22 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: step-ca-acme-external
+spec:
+  acme:
+    # The ACME server URL (internal Step-CA service)
+    server: https://step-ca.step-ca.svc.cluster.local/acme/acme/directory
+    email: admin@homelab.local
+    privateKeySecretRef:
+      name: step-ca-acme-external-account-key
+    skipTLSVerify: true
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: traefik
+          ingressTemplate:
+            metadata:
+              annotations:
+                traefik.ingress.kubernetes.io/router.priority: "100"
+                traefik.ingress.kubernetes.io/router.tls: "false"
