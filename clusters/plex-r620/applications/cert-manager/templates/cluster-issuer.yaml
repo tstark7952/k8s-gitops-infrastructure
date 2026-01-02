@@ -18,5 +18,9 @@ spec:
           ingressTemplate:
             metadata:
               annotations:
-                traefik.ingress.kubernetes.io/router.priority: "100"
-                traefik.ingress.kubernetes.io/router.tls: "false"
+                # Legacy annotation
+                kubernetes.io/ingress.class: traefik
+                # Priority - Ensure this is higher than standard ingresses
+                traefik.ingress.kubernetes.io/router.priority: "120"
+                # Listen only on web (HTTP) for the challenge
+                traefik.ingress.kubernetes.io/router.entrypoints: "web"
