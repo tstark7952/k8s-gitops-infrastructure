@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: https://github.com/tstark7952/k8s-gitops-infrastructure.git
     targetRevision: main
-    path: clusters/plex-r620
+    path: clusters/plex-r620/argocd
     directory:
       recurse: true
   destination:

@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: step-ca
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    chart: step-certificates
+    repoURL: https://smallstep.github.io/helm-charts
+    targetRevision: 1.29.0
+    helm:
+      values: |
+        inject:
+          enabled: false
+        service:
+          type: ClusterIP
+        # Enable ACME for Cert Manager
+        acme:
+          enabled: true
+        # Add provisioner configuration
+        ca:
+          provisioners:
+            - type: ACME
+              name: acme
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: step-ca
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
