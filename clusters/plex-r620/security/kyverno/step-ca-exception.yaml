@@ -1,0 +1,27 @@
+---
+apiVersion: kyverno.io/v2beta1
+kind: PolicyException
+metadata:
+  name: step-ca-exception
+  namespace: kyverno
+spec:
+  exceptions:
+  - policyName: require-non-root-user
+    ruleNames:
+    - check-runAsNonRoot
+    - autogen-check-runAsNonRoot
+  - policyName: pod-security-baseline
+    ruleNames:
+    - restricted-seccomp-profile
+    - autogen-restricted-seccomp-profile
+  match:
+    any:
+    - resources:
+        kinds:
+        - Pod
+        - StatefulSet
+        - ReplicaSet
+        namespaces:
+        - step-ca
+        names:
+        - "step-ca*"
