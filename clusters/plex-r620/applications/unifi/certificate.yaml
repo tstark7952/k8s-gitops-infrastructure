@@ -10,7 +10,6 @@ spec:
     name: step-ca-acme-external
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: unifi.homelab.local
   dnsNames:
   - unifi.homelab.local
   duration: 2160h  # 90 days
@@ -18,7 +17,3 @@ spec:
   privateKey:
     algorithm: RSA
     size: 2048
-  usages:
-  - digital signature
-  - key encipherment
-  - server auth
