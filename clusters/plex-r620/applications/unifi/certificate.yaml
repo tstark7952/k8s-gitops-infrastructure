@@ -1,0 +1,24 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: unifi-controller-tls
+  namespace: unifi
+spec:
+  secretName: unifi-controller-tls
+  issuerRef:
+    name: step-ca-acme-external
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: unifi.homelab.local
+  dnsNames:
+  - unifi.homelab.local
+  duration: 2160h  # 90 days
+  renewBefore: 720h  # 30 days before expiration
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
