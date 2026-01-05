@@ -7,7 +7,6 @@ metadata:
 spec:
   headers:
     customRequestHeaders:
+      Authorization: ""
       X-Forwarded-Proto: "https"
-      X-Forwarded-Host: "unifi.homelab.local"
-    customResponseHeaders:
-      X-Frame-Options: "SAMEORIGIN"
+      X-Forwarded-Port: "443"
