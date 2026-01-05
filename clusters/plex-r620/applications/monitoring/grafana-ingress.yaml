@@ -6,6 +6,8 @@ metadata:
   namespace: monitoring
   annotations:
     cert-manager.io/cluster-issuer: step-ca-acme-external
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   ingressClassName: traefik
   tls:
