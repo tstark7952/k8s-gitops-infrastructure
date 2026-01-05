@@ -8,6 +8,8 @@ metadata:
     app: unifi-controller
   annotations:
     metallb.universe.tf/loadBalancerIPs: 192.168.100.100
+    traefik.ingress.kubernetes.io/service.serversscheme: https
+    traefik.ingress.kubernetes.io/service.serverstransport: unifi-skip-verify@kubernetescrd
 spec:
   type: LoadBalancer
   ports:
