@@ -1,0 +1,13 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: unifi-headers
+  namespace: unifi
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+      X-Forwarded-Host: "unifi.homelab.local"
+    customResponseHeaders:
+      X-Frame-Options: "SAMEORIGIN"
