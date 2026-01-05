@@ -9,4 +9,5 @@ spec:
     customRequestHeaders:
       Authorization: ""
       X-Forwarded-Proto: "https"
+      X-Forwarded-Host: "unifi.homelab.local"
       X-Forwarded-Port: "443"
