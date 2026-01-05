@@ -48,36 +48,6 @@ spec:
       value: 'Network Management'
     - name: 'Security Contact'
       value: 'security@yourdomain.com'
-
-  # Health assessment
-  health:
-    - kind: Deployment
-      check: |
-        hs = {}
-        if obj.status ~= nil then
-          if obj.status.conditions ~= nil then
-            for i, condition in ipairs(obj.status.conditions) do
-              if condition.type == "Progressing" and condition.reason == "ProgressDeadlineExceeded" then
-                hs.status = "Degraded"
-                hs.message = condition.message
-                return hs
-              end
-              if condition.type == "Available" and condition.status == "False" then
-                hs.status = "Degraded"
-                hs.message = condition.message
-                return hs
-              end
-            end
-          end
-          if obj.status.availableReplicas ~= nil and obj.status.availableReplicas > 0 then
-            hs.status = "Healthy"
-            hs.message = "Deployment is healthy"
-            return hs
-          end
-        end
-        hs.status = "Progressing"
-        hs.message = "Waiting for deployment"
-        return hs
 ---
 # ArgoCD AppProject for production workloads
 apiVersion: argoproj.io/v1alpha1
