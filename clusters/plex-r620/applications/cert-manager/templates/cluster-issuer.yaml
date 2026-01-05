@@ -6,7 +6,7 @@ metadata:
 spec:
   acme:
     # The ACME server URL (internal Step-CA service)
-    server: https://step-ca.step-ca.svc.cluster.local/acme/acme/directory
+    server: https://step-ca-step-certificates.step-ca.svc.cluster.local/acme/acme/directory
     email: admin@homelab.local
     privateKeySecretRef:
       name: step-ca-acme-external-account-key
