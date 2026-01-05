@@ -19,14 +19,11 @@ spec:
           enabled: false
         service:
           type: ClusterIP
-        # Enable ACME for Cert Manager
-        acme:
-          enabled: true
-        # Add provisioner configuration
-        ca:
-          provisioners:
-            - type: ACME
-              name: acme
+        # Bootstrap with ACME provisioner
+        bootstrap:
+          postInitHook: |
+            #!/bin/bash
+            step ca provisioner add acme --type ACME || true
   destination:
     server: https://kubernetes.default.svc
     namespace: step-ca
