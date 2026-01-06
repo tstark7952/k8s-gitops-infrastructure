@@ -36,6 +36,12 @@ spec:
         factor: 2
         maxDuration: 3m
 
+  ignoreDifferences:
+    - group: cert-manager.io
+      kind: Certificate
+      jsonPointers:
+        - /status
+
   info:
     - name: 'Component'
       value: 'Observability Stack'

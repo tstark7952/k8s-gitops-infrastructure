@@ -42,6 +42,10 @@ spec:
       kind: Deployment
       jsonPointers:
         - /spec/replicas  # Ignore replica count changes from HPA
+    - group: cert-manager.io
+      kind: Certificate
+      jsonPointers:
+        - /status
 
   info:
     - name: 'Component'
