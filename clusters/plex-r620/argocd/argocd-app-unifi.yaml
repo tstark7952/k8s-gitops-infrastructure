@@ -48,6 +48,7 @@ spec:
         - /status
         - /spec/duration
         - /spec/renewBefore
+        - /metadata/annotations
 
   info:
     - name: 'Component'
