@@ -46,6 +46,8 @@ spec:
       kind: Certificate
       jsonPointers:
         - /status
+        - /spec/duration
+        - /spec/renewBefore
 
   info:
     - name: 'Component'
