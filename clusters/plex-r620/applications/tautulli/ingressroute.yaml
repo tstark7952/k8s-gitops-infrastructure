@@ -1,0 +1,37 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tautulli
+  namespace: media
+  labels:
+    app: tautulli
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`media.homelab.local`)
+    kind: Rule
+    services:
+    - name: tautulli
+      port: 8181
+  tls:
+    secretName: tautulli-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tautulli-http
+  namespace: media
+  labels:
+    app: tautulli
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`media.homelab.local`)
+    kind: Rule
+    middlewares:
+    - name: redirect-to-https
+    services:
+    - name: tautulli
+      port: 8181
