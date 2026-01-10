@@ -23,3 +23,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true # Kyverno often needs this due to CRD sizes
+  ignoreDifferences:
+    - group: kyverno.io
+      kind: ClusterPolicy
+      jsonPointers:
+        - /status
+        - /metadata/annotations
