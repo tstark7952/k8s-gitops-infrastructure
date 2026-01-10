@@ -27,3 +27,4 @@ spec:
       kind: CustomResourceDefinition
       jsonPointers:
         - /status
+        - /metadata/annotations
