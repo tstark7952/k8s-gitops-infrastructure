@@ -7,6 +7,17 @@ kyverno:
     replicas: 1
   reportsController:
     replicas: 1
+  cleanupJobs:
+    admissionReports:
+      image:
+        registry: registry.k8s.io
+        repository: kubectl
+        tag: "v1.30.2"
+    clusterAdmissionReports:
+      image:
+        registry: registry.k8s.io
+        repository: kubectl
+        tag: "v1.30.2"
 
 kyverno-policies:
   enabled: true
