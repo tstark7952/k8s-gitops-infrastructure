@@ -1,0 +1,10 @@
+apiVersion: v2
+name: traefik-wrapper
+description: A wrapper chart for Traefik
+type: application
+version: 0.1.0
+appVersion: "3.6.5"
+dependencies:
+  - name: traefik
+    version: 38.0.1
+    repository: https://traefik.github.io/charts
