@@ -7,14 +7,12 @@ traefik:
     web:
       expose:
         default: true
-      redirections:
-        entryPoint:
-          to: "websecure"
-          scheme: https
-          permanent: true
     websecure:
       tls:
         enabled: true
   additionalArguments:
     - "--providers.kubernetesingress.ingressclass=traefik"
     - "--serverstransport.insecureskipverify=true"
+    - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+    - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+    - "--entryPoints.web.http.redirections.entryPoint.permanent=true"
