@@ -1,0 +1,14 @@
+traefik:
+  service:
+    type: LoadBalancer
+    annotations:
+      metallb.universe.tf/loadBalancerIPs: "192.168.100.102"
+  ports:
+    web:
+      redirectTo: websecure
+    websecure:
+      tls:
+        enabled: true
+  additionalArguments:
+    - "--providers.kubernetesingress.ingressclass=traefik"
+    - "--serverstransport.insecureskipverify=true"
