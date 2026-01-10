@@ -5,8 +5,8 @@ traefik:
       metallb.universe.tf/loadBalancerIPs: "192.168.100.102"
   ports:
     web:
-      redirectTo:
-        port: websecure
+      expose:
+        default: true
     websecure:
       tls:
         enabled: true
