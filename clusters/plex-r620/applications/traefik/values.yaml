@@ -9,7 +9,7 @@ traefik:
         default: true
       redirections:
         entryPoint:
-          to: websecure
+          to: "websecure"
           scheme: https
           permanent: true
     websecure:
