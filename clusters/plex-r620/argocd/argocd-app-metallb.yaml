@@ -28,3 +28,5 @@ spec:
       jsonPointers:
         - /status
         - /metadata/annotations
+        - /spec/conversion
+        - /spec/versions
