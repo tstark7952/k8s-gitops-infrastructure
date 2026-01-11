@@ -23,6 +23,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true # Kyverno often needs this due to CRD sizes
+      - SkipHooks=true # Skip cleanup jobs that use non-existent images
   ignoreDifferences:
     - group: kyverno.io
       kind: ClusterPolicy
