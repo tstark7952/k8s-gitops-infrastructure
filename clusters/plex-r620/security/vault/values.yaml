@@ -65,12 +65,12 @@ vault:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
-        - host: vault.plex.home.arpa
+        - host: vault.homelab.local
           paths: []
       tls:
         - secretName: vault-ui-tls
           hosts:
-            - vault.plex.home.arpa
+            - vault.homelab.local
 
   # Sidecar Injector (for Apps)
   injector:
