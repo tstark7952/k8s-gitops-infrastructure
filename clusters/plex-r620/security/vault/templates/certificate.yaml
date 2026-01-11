@@ -20,6 +20,8 @@ spec:
     - vault-active.vault
     - vault-active.vault.svc
     - vault-active.vault.svc.cluster.local
+    - vault-internal
+    - "*.vault-internal"
     - localhost
   ipAddresses:
     - 127.0.0.1
