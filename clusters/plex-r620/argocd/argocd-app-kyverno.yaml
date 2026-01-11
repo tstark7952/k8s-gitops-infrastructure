@@ -17,9 +17,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: kyverno
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    # automated:
+    #   prune: true
+    #   selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true # Kyverno often needs this due to CRD sizes
