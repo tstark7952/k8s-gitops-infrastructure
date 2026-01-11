@@ -16,7 +16,7 @@ spec:
     targetRevision: 0.18.3
     helm:
       releaseName: trivy-operator
-      values:
+      values: |
         trivy:
           ignoreUnfixed: true
         operator:
