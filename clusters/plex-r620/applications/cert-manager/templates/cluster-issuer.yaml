@@ -23,5 +23,5 @@ spec:
                 kubernetes.io/ingress.class: traefik
                 # Priority - Ensure this is higher than standard ingresses
                 traefik.ingress.kubernetes.io/router.priority: "120"
-                # Listen only on web (HTTP) for the challenge
-                traefik.ingress.kubernetes.io/router.entrypoints: "web"
+                # Listen on web (HTTP) and websecure (HTTPS) for the challenge (required due to global redirect)
+                traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
