@@ -30,6 +30,9 @@ vault:
           }
           service_registration "kubernetes" {}
 
+    # Allow multiple replicas on one node
+    affinity: ""
+
     # Data Persistence
     dataStorage:
       enabled: true
