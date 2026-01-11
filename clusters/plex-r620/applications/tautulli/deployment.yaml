@@ -20,9 +20,22 @@ spec:
       labels:
         app: tautulli
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: tautulli
-        image: lscr.io/linuxserver/tautulli:latest
+        image: lscr.io/linuxserver/tautulli:v2.16.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 8181
           name: http
@@ -36,6 +49,10 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: tmp
+          mountPath: /tmp
+        - name: run
+          mountPath: /run
         resources:
           requests:
             memory: "512Mi"
@@ -64,3 +81,7 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: tautulli-config
+      - name: tmp
+        emptyDir: {}
+      - name: run
+        emptyDir: {}

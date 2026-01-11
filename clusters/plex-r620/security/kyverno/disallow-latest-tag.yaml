@@ -12,7 +12,7 @@ metadata:
       This policy validates that container images specify an explicit tag
       or use a digest reference.
 spec:
-  validationFailureAction: Audit  # Start with Audit
+  validationFailureAction: Enforce  # Block insecure tags
   background: true
   rules:
     - name: require-image-tag
