@@ -1,0 +1,10 @@
+apiVersion: v2
+name: vault-wrapper
+description: Wrapper chart for HashiCorp Vault with high security configuration
+type: application
+version: 1.0.0
+appVersion: "1.15.2"
+dependencies:
+  - name: vault
+    version: 0.27.0
+    repository: https://helm.releases.hashicorp.com
