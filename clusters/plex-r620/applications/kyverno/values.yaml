@@ -9,15 +9,9 @@ kyverno:
     replicas: 1
   cleanupJobs:
     admissionReports:
-      image:
-        registry: registry.k8s.io
-        repository: kubectl
-        tag: "v1.30.2"
+      enabled: false
     clusterAdmissionReports:
-      image:
-        registry: registry.k8s.io
-        repository: kubectl
-        tag: "v1.30.2"
+      enabled: false
 
 kyverno-policies:
   enabled: true
@@ -25,12 +19,6 @@ kyverno-policies:
   validationFailureAction: Audit
   cleanupJobs:
     policyReports:
-      image:
-        registry: registry.k8s.io
-        repository: kubectl
-        tag: "v1.30.2"
+      enabled: false
     clusterPolicyReports:
-      image:
-        registry: registry.k8s.io
-        repository: kubectl
-        tag: "v1.30.2"
+      enabled: false
