@@ -21,10 +21,8 @@ spec:
         app: tautulli
     spec:
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
-        runAsNonRoot: true
+        runAsNonRoot: false # LinuxServer images need to start as root for s6-overlay
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -32,7 +30,7 @@ spec:
         image: lscr.io/linuxserver/tautulli:2.16.0
         securityContext:
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false # Required for s6-overlay and app writes
           capabilities:
             drop:
             - ALL
@@ -49,10 +47,6 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
-        - name: tmp
-          mountPath: /tmp
-        - name: run
-          mountPath: /run
         resources:
           requests:
             memory: "512Mi"
@@ -81,7 +75,3 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: tautulli-config
-      - name: tmp
-        emptyDir: {}
-      - name: run
-        emptyDir: {}
