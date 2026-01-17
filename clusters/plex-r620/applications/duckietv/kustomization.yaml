@@ -5,3 +5,4 @@ resources:
   - duckietv-vm.yaml
   - duckietv-svc.yaml
   - duckietv-ingress.yaml
+  - duckietv-transport.yaml
