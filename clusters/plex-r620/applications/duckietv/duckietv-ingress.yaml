@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: duckietv
+  namespace: duckietv
+  annotations:
+    cert-manager.io/cluster-issuer: step-ca
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+    - host: duckie.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: duckietv
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - duckie.homelab.local
+      secretName: duckietv-tls

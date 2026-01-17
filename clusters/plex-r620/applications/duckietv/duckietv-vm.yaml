@@ -1,0 +1,51 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: duckietv
+  namespace: duckietv
+  labels:
+    app: duckietv
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        app: duckietv
+    spec:
+      domain:
+        cpu:
+          cores: 2
+          sockets: 1
+          threads: 1
+        resources:
+          requests:
+            memory: "4Gi"
+        devices:
+          inputs:
+            - type: tablet
+              name: tablet
+          interfaces:
+            - name: default
+              masquerade: {}
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+      - name: containerdisk
+        containerDisk:
+          image: docker://ghcr.io/linuxserver/baseimage-kasmvnc:alpine318
+      - name: cloudinitdisk
+        cloudInitNoCloud:
+          userData: |
+            #cloud-config
+            password: password
+            chpasswd: { expire: False }
+            runcmd:
+              - [ sh, -c, "apk add git nodejs npm && git clone https://github.com/SchizoDuckie/DuckieTV.git /config/DuckieTV" ]
