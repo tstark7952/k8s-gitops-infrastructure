@@ -6,8 +6,9 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: step-ca-acme-external
     traefik.ingress.kubernetes.io/router.tls: "true"
-    # Switch back to HTTP for the backend communication (Webtop default)
     traefik.ingress.kubernetes.io/service.serversscheme: http
+    # Increase timeouts for KubeVirt VM responsiveness
+    traefik.ingress.kubernetes.io/router.middlewares: duckietv-timeout@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:

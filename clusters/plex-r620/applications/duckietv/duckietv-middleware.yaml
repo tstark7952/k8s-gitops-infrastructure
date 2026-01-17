@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: timeout
+  namespace: duckietv
+spec:
+  forwardauth:
+    address: http://dummy
+  # Wait, Traefik doesn't have a simple "Timeout" middleware in standard CRD.
+  # It's handled in the ServersTransport.
