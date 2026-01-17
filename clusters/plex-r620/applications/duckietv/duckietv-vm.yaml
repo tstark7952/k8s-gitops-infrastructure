@@ -15,12 +15,12 @@ spec:
     spec:
       domain:
         cpu:
-          cores: 4
+          cores: 2
           sockets: 1
           threads: 1
         resources:
           requests:
-            memory: "8Gi"
+            memory: "4Gi"
         devices:
           inputs:
             - type: tablet
@@ -37,13 +37,19 @@ spec:
             - name: cloudinitdisk
               disk:
                 bus: virtio
+      # The Guru move: Don't let Traefik talk to us until the VNC server is READY
+      readinessProbe:
+        tcpSocket:
+          port: 3000
+        initialDelaySeconds: 30
+        periodSeconds: 10
       networks:
       - name: default
         pod: {}
       volumes:
       - name: containerdisk
         containerDisk:
-          image: quay.io/containerdisks/fedora:40
+          image: quay.io/containerdisks/ubuntu:22.04
       - name: cloudinitdisk
         cloudInitNoCloud:
           userData: |
@@ -52,14 +58,15 @@ spec:
             chpasswd: { expire: False }
             ssh_pwauth: True
             runcmd:
-              - dnf install -y xorg-x11-server-Xvfb x11vnc xfce4-session xfce4-panel xfce4-settings xfwm4 xfce4-terminal git nodejs npm
-              - # Create a startup script for the desktop
-              - echo '#!/bin/bash' > /usr/local/bin/start-desktop.sh
-              - echo 'export DISPLAY=:0' >> /usr/local/bin/start-desktop.sh
-              - echo 'rm -f /tmp/.X0-lock' >> /usr/local/bin/start-desktop.sh
-              - echo 'Xvfb :0 -screen 0 1280x1024x24 &' >> /usr/local/bin/start-desktop.sh
-              - echo 'sleep 5' >> /usr/local/bin/start-desktop.sh
-              - echo 'startxfce4 &' >> /usr/local/bin/start-desktop.sh
-              - echo 'x11vnc -display :0 -forever -nopw -rfbport 3000' >> /usr/local/bin/start-desktop.sh
-              - chmod +x /usr/local/bin/start-desktop.sh
-              - /usr/local/bin/start-desktop.sh &
+              - export DEBIAN_FRONTEND=noninteractive
+              - apt-get update
+              - apt-get install -y xfce4 x11vnc xvfb git nodejs npm
+              - # Start the virtual desktop
+              - Xvfb :0 -screen 0 1280x1024x24 &
+              - sleep 5
+              - DISPLAY=:0 startxfce4 &
+              - # Start VNC on port 3000 (mapped to the pod port)
+              - x11vnc -display :0 -forever -nopw -rfbport 3000 &
+              - # Clone and install DuckieTV
+              - git clone https://github.com/SchizoDuckie/DuckieTV.git /opt/DuckieTV
+              - cd /opt/DuckieTV && npm install
