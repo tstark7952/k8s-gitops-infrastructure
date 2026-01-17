@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/justinoleary/k8s-gitops-infrastructure.git
+    repoURL: https://github.com/tstark7952/k8s-gitops-infrastructure.git
     targetRevision: HEAD
     path: clusters/plex-r620/applications/duckietv
   destination:
