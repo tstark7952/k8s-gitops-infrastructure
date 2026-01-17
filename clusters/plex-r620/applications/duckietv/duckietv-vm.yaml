@@ -77,6 +77,10 @@ spec:
           requests:
             storage: 10Gi
         storageClassName: local-path
+        # FIXED: Explicitly specify accessModes and volumeMode
+        accessModes:
+          - ReadWriteOnce
+        volumeMode: Filesystem
       source:
         registry:
           url: "docker://quay.io/containerdisks/ubuntu:22.04"
