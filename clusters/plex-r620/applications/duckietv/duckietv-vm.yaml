@@ -42,7 +42,7 @@ spec:
       volumes:
       - name: containerdisk
         containerDisk:
-          image: ghcr.io/linuxserver/baseimage-kasmvnc:alpine318
+          image: ghcr.io/linuxserver/webtop:ubuntu-xfce
       - name: cloudinitdisk
         cloudInitNoCloud:
           userData: |
