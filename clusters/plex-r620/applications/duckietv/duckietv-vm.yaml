@@ -56,21 +56,45 @@ spec:
             password: password
             chpasswd: { expire: False }
             ssh_pwauth: True
+            # Ensure the disk grows to 10GB
+            growpart:
+              mode: auto
+              devices: ['/']
+            resize_fs:
+              enabled: true
+              device: /
             runcmd:
-              - export DEBIAN_FRONTEND=noninteractive
-              - apt-get update
-              - apt-get install -y xfce4 x11vnc xvfb git nodejs npm novnc websockify
-              - # Start Xvfb and XFCE
-              - Xvfb :0 -screen 0 1280x1024x24 &
-              - sleep 5
-              - DISPLAY=:0 startxfce4 &
-              - # Start VNC on 5900
-              - x11vnc -display :0 -forever -nopw -rfbport 5900 &
-              - # Start noVNC proxy on 3000 (HTTP)
-              - /usr/share/novnc/utils/launch.sh --vnc localhost:5900 --listen 3000 &
-              - # Install DuckieTV
-              - git clone https://github.com/SchizoDuckie/DuckieTV.git /opt/DuckieTV
-              - cd /opt/DuckieTV && npm install
+              - |
+                cat <<'EOF' > /usr/local/bin/setup-duckie.sh
+                #!/bin/bash
+                exec > /var/log/duckie-setup.log 2>&1
+                set -x
+                export DEBIAN_FRONTEND=noninteractive
+                
+                # Wait for network
+                until ping -c 1 google.com; do sleep 2; done
+                
+                # Install Desktop and VNC
+                apt-get update
+                apt-get install -y xfce4 x11vnc xvfb git nodejs npm novnc websockify
+                
+                # Setup Display
+                Xvfb :0 -screen 0 1280x1024x24 &
+                sleep 5
+                DISPLAY=:0 startxfce4 &
+                
+                # Start VNC
+                x11vnc -display :0 -forever -nopw -rfbport 5900 &
+                
+                # Start noVNC (Correct Ubuntu path)
+                /usr/bin/novnc_proxy --vnc localhost:5900 --listen 3000 &
+                
+                # DuckieTV
+                git clone https://github.com/SchizoDuckie/DuckieTV.git /opt/DuckieTV
+                cd /opt/DuckieTV && npm install
+                EOF
+                chmod +x /usr/local/bin/setup-duckie.sh
+                /usr/local/bin/setup-duckie.sh &
   dataVolumeTemplates:
   - metadata:
       name: duckietv-root
