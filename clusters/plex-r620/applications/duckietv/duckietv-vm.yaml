@@ -31,13 +31,12 @@ spec:
               ports:
                 - port: 3000
           disks:
-            - name: containerdisk
+            - name: rootdisk
               disk:
                 bus: virtio
             - name: cloudinitdisk
               disk:
                 bus: virtio
-      # The Guru move: Don't let Traefik talk to us until the VNC server is READY
       readinessProbe:
         tcpSocket:
           port: 3000
@@ -47,9 +46,9 @@ spec:
       - name: default
         pod: {}
       volumes:
-      - name: containerdisk
-        containerDisk:
-          image: quay.io/containerdisks/ubuntu:22.04
+      - name: rootdisk
+        dataVolume:
+          name: duckietv-root
       - name: cloudinitdisk
         cloudInitNoCloud:
           userData: |
@@ -61,12 +60,21 @@ spec:
               - export DEBIAN_FRONTEND=noninteractive
               - apt-get update
               - apt-get install -y xfce4 x11vnc xvfb git nodejs npm
-              - # Start the virtual desktop
               - Xvfb :0 -screen 0 1280x1024x24 &
               - sleep 5
               - DISPLAY=:0 startxfce4 &
-              - # Start VNC on port 3000 (mapped to the pod port)
               - x11vnc -display :0 -forever -nopw -rfbport 3000 &
-              - # Clone and install DuckieTV
               - git clone https://github.com/SchizoDuckie/DuckieTV.git /opt/DuckieTV
               - cd /opt/DuckieTV && npm install
+  dataVolumeTemplates:
+  - metadata:
+      name: duckietv-root
+    spec:
+      storage:
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: local-path
+      source:
+        registry:
+          url: "docker://quay.io/containerdisks/ubuntu:22.04"
