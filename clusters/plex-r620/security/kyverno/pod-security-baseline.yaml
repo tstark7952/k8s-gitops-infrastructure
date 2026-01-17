@@ -21,6 +21,9 @@ spec:
         - resources:
             kinds:
               - Pod
+            namespaces:
+              - "!duckietv"
+              - "!kubevirt"
       validate:
         message: "Pods must use RuntimeDefault or Localhost seccomp profile"
         pattern:
