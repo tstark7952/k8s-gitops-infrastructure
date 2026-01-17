@@ -69,6 +69,8 @@ spec:
   dataVolumeTemplates:
   - metadata:
       name: duckietv-root
+      annotations:
+        cdi.kubevirt.io/storage.bind.immediate.requested: "true"
     spec:
       storage:
         resources:
