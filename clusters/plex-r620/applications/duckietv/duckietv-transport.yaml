@@ -5,3 +5,7 @@ metadata:
   namespace: duckietv
 spec:
   insecureSkipVerify: true
+  forwardingTimeouts:
+    dialTimeout: 30s
+    responseHeaderTimeout: 60s
+    idleConnTimeout: 90s
