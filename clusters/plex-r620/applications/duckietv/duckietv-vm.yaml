@@ -40,7 +40,7 @@ spec:
       volumes:
       - name: containerdisk
         containerDisk:
-          image: docker://ghcr.io/linuxserver/baseimage-kasmvnc:alpine318
+          image: ghcr.io/linuxserver/baseimage-kasmvnc:alpine318
       - name: cloudinitdisk
         cloudInitNoCloud:
           userData: |
