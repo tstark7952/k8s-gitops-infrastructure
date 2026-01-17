@@ -10,6 +10,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    # Using the native KubeVirt label for better accuracy
-    kubevirt.io/domain: duckietv
+    # This is the verified label from the pod
+    vm.kubevirt.io/name: duckietv
   type: ClusterIP
