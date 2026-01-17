@@ -40,7 +40,7 @@ spec:
       volumes:
       - name: containerdisk
         containerDisk:
-          image: ghcr.io/linuxserver/baseimage-kasmvnc:alpine318
+          image: quay.io/containerdisks/fedora:40
       - name: cloudinitdisk
         cloudInitNoCloud:
           userData: |
